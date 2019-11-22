@@ -1,10 +1,18 @@
 # Analysis
 
-#### cpApp.scala
+There are seperate README's inside each folder.
 
-This should go to myApp/src/main/scala/ in the Intellij IDE.
-Follow this tutorial for https://docs.microsoft.com/en-us/azure/hdinsight/spark/apache-spark-intellij-tool-plugin to reproduce the steps of creating a Spark App and connecting it with HDInsight Clusters.
+#### final
 
-## TODO
+Final version of the training code.
 
-- Learn about Spark Functions and how they interact with databases and other functions.
+- Reads from a database
+- Calculates word counts
+- Writes back to a database
+
+#### getPrediction
+
+- Reads test data from a database 
+- Calculates positive and negative counts
+- Calculates the final prediction
+- Does nothing with the calculated result

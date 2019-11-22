@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="getPrediction:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/getPrediction_jar</output-path>
+    <root id="archive" name="getPrediction.jar">
+      <element id="module-output" name="getPrediction" />
+    </root>
+  </artifact>
+</component>
