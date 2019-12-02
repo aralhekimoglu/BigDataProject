@@ -1,0 +1,27 @@
+#%RAML 1.0
+title: Reddit Sentiment Analysis API
+baseUri: http://localhost:3000/api/{version}
+version: v1
+/jobs:
+    get:
+        description: Retrieve a list of all jobs
+    post: 
+        description: Create a new Job
+        responses:
+            200:
+                body:
+                    application/json:
+                        example: |
+                            {
+                                "status": 200,
+                                "guid": "89DEFAF8-B747-4932-B93B-6A5902D39604"
+                                "job_created_datetime": "2019-11-22 19:08:45.1875272 +00:00"
+                                "job_status": "CREATED"
+                            }
+
+    /{jobId}:
+        get:
+            description: Retrieve details of a specific job
+        delete:
+            description: Delete a specific job
+            
