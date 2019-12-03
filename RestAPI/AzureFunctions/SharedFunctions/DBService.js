@@ -50,6 +50,8 @@ async function createJob(subreddit, topic) {
     }
     const request = await new sql.Request(_pool)
     try {
+        request.input('subreddit', sql.VarChar(50), subreddit)
+        request.input('topic', sql.VarChar(50), topic)
         let result = await request.execute('dbo.uspCreateJobEntry')
         console.log(result.recordset[0]) // key/value collection of output values
         return result.recordset[0]
