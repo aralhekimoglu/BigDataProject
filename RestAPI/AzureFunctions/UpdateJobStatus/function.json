@@ -1,7 +1,7 @@
 {
   "bindings": [
     {
-      "name": "jobData",
+      "name": "input",
       "type": "activityTrigger",
       "direction": "in"
     }

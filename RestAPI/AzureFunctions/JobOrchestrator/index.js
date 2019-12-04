@@ -13,6 +13,7 @@ const df = require("durable-functions")
 const NUM_BATCHES = 1
 
 module.exports = df.orchestrator(function* (context) {
+    let job
     try {
         const input = context.df.getInput()
         const targetCount = input.messageCount
@@ -23,12 +24,15 @@ module.exports = df.orchestrator(function* (context) {
         let data = []
         let rateLimitExpirationTimestamp = 0
         // Create a job entry in the job table
-        const job = yield context.df.callActivity("CreateJobDBEntry", input)
+        job = yield context.df.callActivity("CreateJobDBEntry", input)
         statusObject = {
             job_guid: job.guid,
             job_status: "CREATED"
         }
         context.df.setCustomStatus(statusObject);
+
+        // Update the job table with status Asynchronously
+        yield context.df.callActivity("UpdateJobStatus", {job_guid:job.guid, status:"FETCHING MESSAGES"})
 
         // Loop to get all messages
         while(messageCount < targetCount) {
@@ -36,7 +40,7 @@ module.exports = df.orchestrator(function* (context) {
             let i = 0
             const tasks = []
             let rateLimited = false
-            statusObject.job_status = "GATHERING MESSAGES"
+            statusObject.job_status = "FETCHING MESSAGES"
             statusObject.num_message = messageCount + ' / ' + targetCount
             context.df.setCustomStatus(statusObject);
 
@@ -113,12 +117,16 @@ module.exports = df.orchestrator(function* (context) {
         context.df.setCustomStatus(statusObject);
 
         // Call Spark Job
+        // Update the job table with status Asynchronously
+        yield context.df.callActivity("UpdateJobStatus", {job_guid:job.guid, status:"CALLED SPARK"})
+
         statusObject.job_status = "CALLING SPARK JOB"
         context.df.setCustomStatus(statusObject);
         const resp = yield context.df.callActivity("CallSparkJob", job.guid)  
         statusObject.job_status = "CALLED SPARK JOB"
         context.df.setCustomStatus(statusObject);
     } catch (err) {
+        yield context.df.callActivity("UpdateJobStatus", {job_guid:job.guid, status:"FAILED"})
         throw err
     }
 });

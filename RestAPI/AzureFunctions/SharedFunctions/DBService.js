@@ -43,11 +43,11 @@ async function getConnection() {
 
 /**
  * Creates a Job Entry in the dbo.job table by calling the dbo.uspCreateJobEntry stored procedure
+ * @param {String} subreddit subreddit to be searched
+ * @param {String} topic     topic to search for
  */
 async function createJob(subreddit, topic) {
-    if(!initialized) {
-        throw new Error("DB Connection Pool not initialized yet")
-    }
+    await _pool
     const request = await new sql.Request(_pool)
     try {
         request.input('subreddit', sql.VarChar(50), subreddit)
@@ -64,9 +64,7 @@ async function createJob(subreddit, topic) {
  * Returns a recordset of all entries from the dbo.jobs table
  */
 async function getJobs() {
-    if(!initialized) {
-        throw new Error("DB Connection Pool not initialized yet")
-    }
+    await _pool
     try{
         const request = await new sql.Request(_pool)
         let result = await request.query('select * from dbo.job')
@@ -76,13 +74,16 @@ async function getJobs() {
     }
 }
 
+/**
+ * Retrieves the results from the dbo.results table for a given job uuid
+ * @param {uuid} job_guid job uuid to get the results for
+ */
 async function getJobDetails(job_guid) {
-    if(!initialized) {
-        throw new Error("DB Connection Pool not initialized yet")
-    }
+    await _pool
     try {
         const request = await new sql.Request(_pool)
-        let result = await request.query(`select * from dbo.results WHERE jobid=\'${job_guid}\'`)
+        request.input('job_guid', sql.VarChar(36), job_guid)
+        let result = await request.query("select * from dbo.results WHERE jobid=@job_guid")
         return result.recordset
     } catch (err) {
         throw err
@@ -91,29 +92,29 @@ async function getJobDetails(job_guid) {
 
 /**
  * Updates the status field of a job in the dbo.job table
- * 
  * @param {String} guid   guid of the job to update
  * @param {String} status status to set the status field to
  */
 async function updateJobStatus(guid, status) {
-    if(!initialized) {
-        throw new Error("DB Connection Pool not initialized yet")
-    }
+    await _pool
     try{
         const request = await new sql.Request(_pool)
         request.input('guid', sql.UniqueIdentifier, guid)
         request.input('status', sql.VarChar(20), status)
-        let result = await request.query('UPDATE dbo.job SET status = @status WHERE guid = @guid')
+        let result = await request.query('UPDATE dbo.job SET job_status = @status WHERE guid = @guid')
         return result.returnValue
     } catch (err) {
         throw err
     }
 }
 
+/**
+ * Inserts reddit comments into the dbo.reddit_messages table
+ * @param {uuid} guid              job uuid associated with these messages
+ * @param {Array<String>} comments array of comments to write to table
+ */
 async function insertRedditComments(guid, comments) {
-    if(!initialized) {
-        throw new Error("DB Connection Pool not initialized yet")
-    }        
+    await _pool     
     try{
         const table = new sql.Table('reddit_messages') // or temporary table, e.g. #temptable
         table.create = true

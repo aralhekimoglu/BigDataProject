@@ -12,7 +12,7 @@ const r = new snoowrap({
     password: process.env['REDDIT_PW']
   });
 
-// A recursive funcition to build a promise chain
+// A recursive funcition to build a promise chain. Unused
 function chainNext(p, args) {
     if (args.length) {
       const arg = args.shift();
@@ -48,6 +48,7 @@ async function getThreads(subreddit, topic, afterId, count, time = 'year', sort 
     }
 }
 
+// function to chain promises until a condition is met. Unused
 const promiseWhile = (data, condition, action) => {
     let whilst = (data) => {
       return condition(data) ?
@@ -56,36 +57,13 @@ const promiseWhile = (data, condition, action) => {
     }
     return whilst(data);
   };
-  
-async function getMessagesAsync(threads, concurrencyLimit = 5) {
-    let data = []
-    try {
-        threads.forEach(submission => {
-            getCommentsPromises.push(promiseWhile(submission, submission.length > 0, )
-            )
-        })
-        await Promise.all(getCommentsPromises.map(task => task()))
-        
-    } catch (err) {
-        throw err
-    }
 
-    // r.getHot().map(post => post.title).catch(err => {
-    //     context.log(err.message)
-    //     context.res = {
-    //         status: 500,
-    //         body: err.message
-    //     };
-    // }).then(posts => {
-    //     context.log(posts)
-    //     context.res = {
-    //         // status: 200, /* Defaults to 200 */
-    //         body: JSON.stringify(posts)
-    //     };
-    // })
-}
-
-async function getMessagesSync(subreddit, topic, threads) {
+  /**
+   * Gets messages from Reddit API synchronously.
+   * @param {String} subreddit      Subreddit threads belong to
+   * @param {Array<String>} threads Array of thread IDs
+   */
+async function getMessagesSync(subreddit, threads) {
     // Using Snoowrap Methods:
     // let data = []
     // if (threads === undefined || threads.length === 0)
@@ -122,6 +100,10 @@ async function getMessagesSync(subreddit, topic, threads) {
     return {data: data}
 }
 
+/**
+ * Unused function for flattening a comment tree.
+ * @param {Array<comments>} thread 
+ */
 function flattenThreadTree(thread) {
     let data = []
     let queue = thread.comments

@@ -8,7 +8,7 @@
  * - run 'npm install durable-functions' from the wwwroot folder of your
  *   function app in Kudu
  */
-
+const dbService = require('../SharedFunctions/DBService')
 module.exports = async function (context) {
-    return `Hello ${context.bindings.jobData}!`;
+    dbService.updateJobStatus(context.bindings.input.job_guid, context.bindings.input.status)
 };

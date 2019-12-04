@@ -12,7 +12,7 @@
  */
 
 module.exports = async function (context) {
-    const job = await dbService.createJob()
+    const job = await dbService.createJob(context.bindingData.inputData.subreddit, context.bindingData.inputData.topic)
     console.log(`Created job for subreddit: ${context.bindingData.inputData.subreddit} & topic: ${context.bindingData.inputData.topic}`)
     return job
 };

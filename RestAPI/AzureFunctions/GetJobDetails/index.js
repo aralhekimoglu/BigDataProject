@@ -2,7 +2,7 @@ const dbService = require('../SharedFunctions/DBService')
 
 module.exports = async function (context, req) {
     try{
-        const jobDetails = await dbService.getJobDetails(req.query.guid)
+        const jobDetails = await dbService.getJobDetails(context.bindingData.jobId)
         const resp = {code: 0, details: jobDetails}
         context.res = {
             // status: 200, /* Defaults to 200 */

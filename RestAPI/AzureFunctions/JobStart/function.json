@@ -6,9 +6,9 @@
       "type": "httpTrigger",
       "direction": "in",
       "methods": [
-        "post",
-        "get"
-      ]
+        "post"
+      ],
+      "route": "jobs"
     },
     {
       "name": "$return",
