@@ -8,6 +8,9 @@ import org.apache.spark.sql.{Encoders, Row, SparkSession}
 
 object getPrediction {
   def main (arg: Array[String]): Unit = {
+
+    val jobid = arg(0)
+
     val conf = new SparkConf()
       .set("spark.sql.warehouse.dir", "hdfs://namenode/sql/metadata/hive")
       .set("spark.sql.catalogImplementation","hive")
@@ -25,11 +28,12 @@ object getPrediction {
     import spark.implicits._
 
     // SQL Parameters
-    val jdbcUsername = "aral.hekimoglu"
-    val jdbcPassword = "NYara.1470"
-    val jdbcHostname = "dbprojectserver.database.windows.net" //typically, this is in the form or servername.database.windows.net
+
+    val jdbcUsername = "ricardowang"
+    val jdbcPassword = "FinalProject6513"
+    val jdbcHostname = "cs6513.database.windows.net" //typically, this is in the form or servername.database.windows.net
     val jdbcPort = 1433
-    val jdbcDatabase ="projectdb"
+    val jdbcDatabase ="finalproject"
 
     val jdbc_url = s"jdbc:sqlserver://${jdbcHostname}:${jdbcPort};database=${jdbcDatabase};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=60;"
     val connectionProperties = new Properties()
@@ -37,7 +41,7 @@ object getPrediction {
     connectionProperties.put("password", s"${jdbcPassword}")
 
     def preprocess( line : Row) : Array[String] = {
-      val s = line(0).toString()
+      val s = line(6).toString()
       val s_nopunct = s.replaceAll("""[\p{Punct}&&[^.]]""", "")
       val s_lower = s_nopunct.toLowerCase()
 
@@ -54,10 +58,13 @@ object getPrediction {
       return word2count
     }
 
-    val test_table_df = spark.read.jdbc(jdbc_url,"dbo.test_table",connectionProperties)
+    val test_table_df = spark.read.jdbc(jdbc_url,"dbo.reddit_messages",connectionProperties)
+
     val test_texts: RDD[Row] = test_table_df.rdd
-    val test_w2c = getWord2Count(test_texts)
-    val wordtable_df = spark.read.jdbc(jdbc_url,"dbo.wordtable",connectionProperties)
+    val test_texts2 = test_texts.filter(text => text(0) == jobid)
+
+    val test_w2c = getWord2Count(test_texts2)
+    val wordtable_df = spark.read.jdbc(jdbc_url,"dbo.word_table",connectionProperties)
     val words: RDD[Row] = wordtable_df.rdd
     val word_row2rdd = words.map(line=> (line.getString(0),(line.getInt(1),line.getInt(2))))
     val joined = word_row2rdd.join(test_w2c)
@@ -67,10 +74,22 @@ object getPrediction {
     val score = scores.reduce(_ + _)
     val pred = score>=0
 
+    spark.sql("DROP TABLE IF EXISTS results")
+    spark.sql("create table results (jobid varchar(64), results int)")
+    spark.sql("insert into results values ('"+jobid+"',"+pred+")")
+    spark.table("results").write.mode("append").jdbc(jdbc_url,"results",connectionProperties)
+
+   /*
     val scores_df = scores.toDF()
     scores_df.createOrReplaceTempView("tempscores")
-    spark.sql("DROP TABLE IF EXISTS scores_table")
-    spark.sql("create table scores_table as select * from tempscores")
-    spark.table("scores_table").write.jdbc(jdbc_url, "scorestable", connectionProperties)
+
+    spark.sql("DROP TABLE IF EXISTS results")
+
+    //spark.sql("create table scores_table as select * from tempscores")
+    spark.sql("create table results (jobid varchar(64), results int)")
+    spark.sql("insert into results (job1,1)")
+
+    spark.table("results").write.mode("append").jdbc(jdbc_url, "results", connectionProperties)
+    */
   }
 }
