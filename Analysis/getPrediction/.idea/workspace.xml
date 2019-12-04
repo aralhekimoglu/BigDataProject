@@ -6,7 +6,12 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b1b2de76-8786-4c73-8153-84bb5dd99131" name="Default Changelist" comment="" />
+    <list default="true" id="b1b2de76-8786-4c73-8153-84bb5dd99131" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/getPrediction_jar/getPrediction.jar" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/getPrediction_jar/getPrediction.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/com/sparkcloud/spark/query/App.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/com/sparkcloud/spark/query/App.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../RestAPI/AzureFunctions/JobOrchestrator/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/../../RestAPI/AzureFunctions/JobOrchestrator/index.js" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,6 +20,9 @@
   </component>
   <component name="CodeStyleSettingsInfer">
     <option name="done" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="MavenImportPreferences">
     <option name="importingSettings">
@@ -56,5 +64,16 @@
       <updated>1573798649308</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

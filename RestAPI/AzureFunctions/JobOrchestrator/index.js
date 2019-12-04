@@ -16,17 +16,19 @@ module.exports = df.orchestrator(function* (context) {
     try {
         const input = context.df.getInput()
         const targetCount = input.messageCount
+        let statusObject = {}
         let nextThreadId
         let messageCount = 0
         let threadCount = 0
         let data = []
-        let rateLimitExpirationTimestamp
+        let rateLimitExpirationTimestamp = 0
         // Create a job entry in the job table
         const job = yield context.df.callActivity("CreateJobDBEntry", input)
-        context.df.setCustomStatus({
+        statusObject = {
             job_guid: job.guid,
             job_status: "CREATED"
-        });
+        }
+        context.df.setCustomStatus(statusObject);
 
         // Loop to get all messages
         while(messageCount < targetCount) {
@@ -34,11 +36,9 @@ module.exports = df.orchestrator(function* (context) {
             let i = 0
             const tasks = []
             let rateLimited = false
-            context.df.setCustomStatus({
-                job_guid: job.guid,
-                job_status: "GATHERING MESSAGES",
-                num_message: messageCount + ' / ' + targetCount
-            });
+            statusObject.job_status = "GATHERING MESSAGES"
+            statusObject.num_message = messageCount + ' / ' + targetCount
+            context.df.setCustomStatus(statusObject);
 
             // Get a list of threads from the given subreddit
             input.afterId = nextThreadId
@@ -46,7 +46,7 @@ module.exports = df.orchestrator(function* (context) {
             const result = yield context.df.callActivity("FetchSubredditThreads", input)
             if (result.rateLimited) {
                 rateLimited = true
-                rateLimitExpirationTimestamp = result.rateLimitExpiration
+                rateLimitExpirationTimestamp = (rateLimitExpirationTimestamp < result.rateLimitExpiration) ? rateLimitExpiration : rateLimitExpirationTimestamp
             }
             threadIdList = result.ids
             threadCount += result.ids.length
@@ -78,48 +78,46 @@ module.exports = df.orchestrator(function* (context) {
                             threadIdList = threadIdList.concat(result.threads) 
                         if (result.rateLimited == true) {
                             rateLimited = true
-                            rateLimitExpirationTimestamp = result.rateLimitExpiration
+                            rateLimitExpirationTimestamp = (rateLimitExpirationTimestamp < result.rateLimitExpiration) ? rateLimitExpiration : rateLimitExpirationTimestamp
                         }
                     })
-                    context.df.setCustomStatus({
-                        job_guid: job.guid,
-                        job_status: "GATHERING MESSAGES",
-                        num_message: messageCount + ' / ' + targetCount
-                    });
+                    statusObject.num_message = messageCount + ' / ' + targetCount
+                    context.df.setCustomStatus(statusObject);
                     // if we are rate limited, we will until our rate limit resets and then continue
                     if(rateLimited && messageCount < targetCount) {
-                        yield context.df.createTimer(new Date(rateLimitExpirationTimestamp));
+                        statusObject.job_status = "RATE LIMITED"
+                        statusObject.retry_time = new Date(rateLimitExpirationTimestamp).toISOString()
+                        context.df.setCustomStatus(statusObject);
+                        yield context.df.createTimer(new Date(rateLimitExpirationTimestamp))
+                        delete statusObject.retry_time
                         rateLimited = false
                     }
                 }
             }
             // if we are rate limited, we will wait until our rate limit resets and then continue
             if(rateLimited && messageCount < targetCount) {
-                yield context.df.createTimer(new Date(rateLimitExpirationTimestamp));
+                statusObject.job_status = "RATE LIMITED"
+                statusObject.retry_time = new Date(rateLimitExpirationTimestamp).toISOString()
+                context.df.setCustomStatus(statusObject);
+                yield context.df.createTimer(new Date(rateLimitExpirationTimestamp))
+                delete statusObject.retry_time
                 rateLimited = false
             }
         }
         
         // Push to DB
-        context.df.setCustomStatus({
-            job_guid: job.guid,
-            job_status: "WRITING TO DB",
-            num_message: messageCount
-        });
+        statusObject.job_status = "WRITING TO DB"
+        context.df.setCustomStatus(statusObject);
         yield context.df.callActivity("PushDB", {job_guid: job.guid, data:data})
-        context.df.setCustomStatus({
-            job_guid: job.guid,
-            job_status: "WRITTEN TO DB",
-            num_message: messageCount
-        });
+        statusObject.job_status = "WRITTEN TO DB"
+        context.df.setCustomStatus(statusObject);
 
         // Call Spark Job
-        context.df.setCustomStatus({
-            job_guid: job.guid,
-            job_status: "CALLING SPARK JOB",
-            num_message: messageCount
-        }); 
-        //context.df.callActivity("CallSparkJob", job.guid)  
+        statusObject.job_status = "CALLING SPARK JOB"
+        context.df.setCustomStatus(statusObject);
+        const resp = yield context.df.callActivity("CallSparkJob", job.guid)  
+        statusObject.job_status = "CALLED SPARK JOB"
+        context.df.setCustomStatus(statusObject);
     } catch (err) {
         throw err
     }

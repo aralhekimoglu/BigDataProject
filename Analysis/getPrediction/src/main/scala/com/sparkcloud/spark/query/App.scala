@@ -1,3 +1,5 @@
+package com.sparkcloud.spark.query
+
 import java.util.Properties
 
 import org.apache.spark.SparkConf
@@ -41,7 +43,7 @@ object getPrediction {
     connectionProperties.put("password", s"${jdbcPassword}")
 
     def preprocess( line : Row) : Array[String] = {
-      val s = line(6).toString()
+      val s = line(7).toString()
       val s_nopunct = s.replaceAll("""[\p{Punct}&&[^.]]""", "")
       val s_lower = s_nopunct.toLowerCase()
 
