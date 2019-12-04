@@ -76,6 +76,19 @@ async function getJobs() {
     }
 }
 
+async function getJobDetails(job_guid) {
+    if(!initialized) {
+        throw new Error("DB Connection Pool not initialized yet")
+    }
+    try {
+        const request = await new sql.Request(_pool)
+        let result = await request.query(`select * from dbo.results WHERE jobid=\'${job_guid}\'`)
+        return result.recordset
+    } catch (err) {
+        throw err
+    }
+}
+
 /**
  * Updates the status field of a job in the dbo.job table
  * 
@@ -111,12 +124,22 @@ async function insertRedditComments(guid, comments) {
         table.columns.add('downs', sql.Int)
         table.columns.add('score', sql.Int)
         table.columns.add('gilded', sql.Int)
+        table.columns.add('created', sql.DateTimeOffset(3))
         table.columns.add('body', sql.VarChar(10000))
         table.columns.add('permalink', sql.VarChar(1000))
-        //table.columns.add('created_utc', sql.Int) ,comment.created_utc
         table.columns.add('subreddit_name_prefixed', sql.VarChar(1000))
         comments.forEach(comment => {
-            table.rows.add(guid,comment.total_awards_received,comment.ups,comment.downs,comment.score,comment.gilded,comment.body,comment.permalink,comment.subreddit_name_prefixed)
+            table.rows.add(
+                guid,
+                comment.total_awards_received,
+                comment.ups,
+                comment.downs,
+                comment.score,
+                comment.gilded,
+                new Date(comment.created_utc*1000),
+                comment.body,
+                comment.permalink,
+                comment.subreddit_name_prefixed)
         })
         const request = await new sql.Request(_pool)
         await request.bulk(table)
@@ -129,5 +152,6 @@ module.exports = {
     createJob,
     getJobs,
     updateJobStatus,
-    insertRedditComments
+    insertRedditComments,
+    getJobDetails
 };

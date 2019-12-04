@@ -24,15 +24,28 @@ function chainNext(p, args) {
     return p;
 }
 
-async function getThreads(subreddit, topic, time = 'year', sort = 'relevance') {
+async function getThreads(subreddit, topic, afterId, count, time = 'year', sort = 'relevance') {
     // Using Snoowrap Methods:
     //return r.getSubreddit(subreddit).search({limit: 100, query: topic, time: time, sort: sort})
 
     // Directly calling Reddit API:
-    let data = await r._get({uri: 'r/' + subreddit + '/search', qs: {t:time, sort:sort, q:topic, restrict_sr:true}})
-    return data.map(thread => {
-        return thread.id
-    })
+    const options = {t:time, sort:sort, q:topic, restrict_sr:true, limit:100}
+    if (afterId !== undefined) {
+        options.after = afterId
+        options.count = count
+    }
+    try {
+        const data = await r._get({uri: 'r/' + subreddit + '/search', qs: options})
+        const after = data._query.after
+        const ids = data.map(thread => {
+            return thread.id
+        })
+        return {ids:ids, afterId:after}
+    } catch (err) {
+        if (err.statusCode === 429)
+            return {rateLimited: true, rateLimitExpiration: r.ratelimit_expiration}
+        throw err
+    }
 }
 
 const promiseWhile = (data, condition, action) => {
@@ -94,13 +107,14 @@ async function getMessagesSync(subreddit, topic, threads) {
     let data = []
     while(threads.length > 0) {
         try{
-            const id = threads.shift()
+            const id = threads[0]
             let result = await r._get({uri: 'r/' + subreddit + '/comments/' + id, qs:{article:id, context:0, showedits:false, showmore:true, sort:'top', threaded:false, truncate:0, depth:4, limit: Infinity}})
-            //result.comments.filter(simpleFilter)
-            data = data.concat(result.comments)
+            threads.shift()
+            const filteredResults = result.comments.filter(simpleFilter)
+            data = data.concat(filteredResults)
         } catch (err) {
             if(err.statusCode == 429){ // Rate limited
-                return {rateLimited: true, data: data, threads: threads}
+                return {rateLimited: true, rateLimitExpiration: r.ratelimit_expiration, data: data, threads: threads}
             }
             throw err
         }
@@ -134,14 +148,15 @@ function flattenThreadTree(thread) {
 }
 
 function simpleFilter(comment) {
-    return (comment.score > 0 
-        && !comment.author.toLowerCase().includes('bot')
+    return (comment.score !== undefined 
+        && comment.author !== undefined
+        && comment.body !== undefined
+        && comment.score > 0 
         && comment.body !== "[removed]")
 }
 
 module.exports = {
     getMessagesSync,
-    getThreads,
-    flattenThreadTree
+    getThreads
 }
 

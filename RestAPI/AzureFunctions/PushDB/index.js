@@ -11,5 +11,8 @@
 const dbService = require('../SharedFunctions/DBService')
 
 module.exports = async function (context) {
-    return dbService.insertRedditComments(context.bindings.input.job_guid, context.bindings.input.data)
+    console.log(`Writing ${context.bindings.input.data.length} records to DB for job: ${context.bindings.input.job_guid}`)
+    const result = await dbService.insertRedditComments(context.bindings.input.job_guid, context.bindings.input.data)
+    console.log(`Finished writing to DB`)
+    return result
 };

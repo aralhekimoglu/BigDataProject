@@ -8,30 +8,25 @@
  * - run 'npm install durable-functions' from the wwwroot folder of your
  *   function app in Kudu
  */
-const https = require('https')
+const request = require('request-promise-native');
 module.exports = async function (context) {
-    data = { "file":"wasb://dfc-spark-cluster-2019-11-11t00-54-32-178z@dfcsparkclusthdistorage.blob.core.windows.net/spark_job_fromvscode/6a3db288-d864-4908-9505-5ffa571996cd/pi-spark-example.py" }
-    dataJson = JSON.stringify(data)
+    const data = { "file": process.env["LIVY_JOB_PATH"], "className": process.env["LIVY_CLASS_NAME"], "args": `[${context.bindings.jobid}]`}
+    let dataJson = JSON.stringify(data)
+
+    // need to format the args property correctly
+    dataJson = dataJson.replace('\"\[', '[\"')
+    dataJson = dataJson.replace('\]\"', '\"]')
     const options = {
-        hostname: process.env["LIVY_PATH"],
-        port: 443,
-        path: process.env["LIVY_ENDPOINT"],
+        uri: `https://${process.env["LIVY_HOST"]}${process.env["LIVY_PATH"]}`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-By': 'admin',
             'Authorization': 'Basic ' + new Buffer(process.env["LIVY_USER"] + ':' + process.env["LIVY_PW"]).toString('base64'),
-            'Content-Length': Buffer.byteLength(dataJson)
-        }
+        },
+        body: dataJson,
     }
-    let req = https.request(options, (resp) => {
-        resp.on('data', (respData) => {
-            console.log(respData)
-            return respData
-        })
-    }).on("error", (err) => {
-        throw err
-    })
-    req.write(dataJson)
-    req.end
+    
+    // send our request
+    return await request(options)
 }

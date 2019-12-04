@@ -11,5 +11,8 @@
 const redditAPIService = require('../SharedFunctions/RedditAPIService')
 
 module.exports = async function (context) {
-    return await redditAPIService.getThreads(context.bindings.inputData.subreddit, context.bindings.inputData.topic)
+    console.log(`Fetching Thread IDs for subreddit: ${context.bindings.input.subreddit}, topic: ${context.bindings.input.topic}, after: ${context.bindings.input.afterId}, count: ${context.bindings.input.count}`)
+    const result = await redditAPIService.getThreads(context.bindings.input.subreddit, context.bindings.input.topic, context.bindings.input.afterId, context.bindings.input.count)
+    console.log(`Fetched ${result.ids.length} ids. after: ${result.afterId}`)
+    return result
 };
