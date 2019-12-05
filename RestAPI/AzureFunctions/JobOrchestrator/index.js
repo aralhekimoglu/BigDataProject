@@ -47,6 +47,7 @@ module.exports = df.orchestrator(function* (context) {
             // Get a list of threads from the given subreddit
             input.afterId = nextThreadId
             input.count = threadCount
+            try {
             const result = yield context.df.callActivity("FetchSubredditThreads", input)
             if (result.rateLimited) {
                 rateLimited = true
@@ -54,6 +55,13 @@ module.exports = df.orchestrator(function* (context) {
             }
             threadIdList = result.ids
             threadCount += result.ids.length
+        } catch (err) {
+            if (err.statusCode === 404) {
+                statusObject.job_status = "UNABLE TO FETCH DATA FROM REDDIT"
+                context.df.setCustomStatus(statusObject);
+            }
+            throw err
+        }
             nextThreadId = result.afterId
             if (result.ids.length === 0)
                 throw new Error("Panic - no thread ids found")
@@ -126,6 +134,8 @@ module.exports = df.orchestrator(function* (context) {
         statusObject.job_status = "CALLED SPARK JOB"
         context.df.setCustomStatus(statusObject);
     } catch (err) {
+        statusObject.job_status = "FAILED"
+        context.df.setCustomStatus(statusObject);
         yield context.df.callActivity("UpdateJobStatus", {job_guid:job.guid, status:"FAILED"})
         throw err
     }

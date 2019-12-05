@@ -67,7 +67,17 @@ async function getJobs() {
     await _pool
     try{
         const request = await new sql.Request(_pool)
-        let result = await request.query('select * from dbo.job')
+        let result = await request.query(`SELECT [id]
+            ,[guid]
+            ,[created_datetime]
+            ,[ended_datetime]
+            ,[job_status]
+            ,[subreddit]
+            ,[topic]
+            ,[results] AS result
+            FROM [dbo].[job]
+            LEFT JOIN [dbo].[results]
+            ON [results].[jobid]=CAST([job].[guid] AS varchar(36))`)
         return result.recordset
     } catch (err) {
         throw err
