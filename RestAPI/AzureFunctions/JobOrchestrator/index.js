@@ -14,10 +14,10 @@ const NUM_BATCHES = 1
 
 module.exports = df.orchestrator(function* (context) {
     let job
+    let statusObject = {}
     try {
         const input = context.df.getInput()
         const targetCount = input.messageCount
-        let statusObject = {}
         let nextThreadId
         let messageCount = 0
         let threadCount = 0
@@ -48,25 +48,23 @@ module.exports = df.orchestrator(function* (context) {
             input.afterId = nextThreadId
             input.count = threadCount
             try {
-            const result = yield context.df.callActivity("FetchSubredditThreads", input)
-            if (result.rateLimited) {
-                rateLimited = true
-                rateLimitExpirationTimestamp = (rateLimitExpirationTimestamp < result.rateLimitExpiration) ? rateLimitExpiration : rateLimitExpirationTimestamp
+                const result = yield context.df.callActivity("FetchSubredditThreads", input)
+                if (result.rateLimited) {
+                    rateLimited = true
+                    rateLimitExpirationTimestamp = (rateLimitExpirationTimestamp < result.rateLimitExpiration) ? rateLimitExpiration : rateLimitExpirationTimestamp
+                }
+                threadIdList = result.ids
+                threadCount += result.ids.length
+                nextThreadId = result.afterId
+                if (result.ids.length === 0)
+                    throw new Error("Panic - no thread ids found")
+            } catch (err) {
+                if (err.statusCode === 404) {
+                    statusObject.job_status = "UNABLE TO FETCH DATA FROM REDDIT"
+                    context.df.setCustomStatus(statusObject);
+                }
+                throw err
             }
-            threadIdList = result.ids
-            threadCount += result.ids.length
-        } catch (err) {
-            if (err.statusCode === 404) {
-                statusObject.job_status = "UNABLE TO FETCH DATA FROM REDDIT"
-                context.df.setCustomStatus(statusObject);
-            }
-            throw err
-        }
-            nextThreadId = result.afterId
-            if (result.ids.length === 0)
-                throw new Error("Panic - no thread ids found")
-
-            
             if (!rateLimited) {
                 while (threadIdList.length > 0) {
                     if (threadIdList.length === 0)
@@ -97,6 +95,7 @@ module.exports = df.orchestrator(function* (context) {
                     context.df.setCustomStatus(statusObject);
                     // if we are rate limited, we will until our rate limit resets and then continue
                     if(rateLimited && messageCount < targetCount) {
+                        console.log("Rate Limited!. Rate limit expires at " + new Date(rateLimitExpirationTimestamp))
                         statusObject.job_status = "RATE LIMITED"
                         statusObject.retry_time = new Date(rateLimitExpirationTimestamp).toISOString()
                         context.df.setCustomStatus(statusObject);
@@ -108,6 +107,7 @@ module.exports = df.orchestrator(function* (context) {
             }
             // if we are rate limited, we will wait until our rate limit resets and then continue
             if(rateLimited && messageCount < targetCount) {
+                console.log("Rate Limited!. Rate limit expires at " + new Date(rateLimitExpirationTimestamp))
                 statusObject.job_status = "RATE LIMITED"
                 statusObject.retry_time = new Date(rateLimitExpirationTimestamp).toISOString()
                 context.df.setCustomStatus(statusObject);
