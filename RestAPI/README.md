@@ -3,6 +3,7 @@
 REST API for our class project. Written as Azure Functions. Exposes 3 functions publically to trigger a job, get a list of jobs, and check the results from a specific job.
 
 ## Table of Contents <!-- omit in toc -->
+- [Dependencies](#dependencies)
 - [Configuration](#configuration)
 - [Functions](#functions)
   - [Exposed Functions](#exposed-functions)
@@ -16,6 +17,12 @@ REST API for our class project. Written as Azure Functions. Exposes 3 functions 
     - [FetchMessages](#fetchmessages)
     - [PushDB](#pushdb)
     - [CallSparkJob](#callsparkjob)
+
+## Dependencies
+- [MS SQL Server Client library for NodeJS](https://www.npmjs.com/package/mssql)
+- [Snoowrap Javascript Reddit API Wrapper Library](https://www.npmjs.com/package/snoowrap) (to be removed)
+- [Azure Durable Functions library for NodeJS](https://www.npmjs.com/package/durable-functions)
+- [Request library for NodeJS](https://www.npmjs.com/package/request-promise-native)
 
 ## Configuration
 Requires the below configuration in application settings for function app:
