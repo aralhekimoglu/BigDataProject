@@ -46,6 +46,12 @@ Requires the below configuration in application settings for function app:
 
 ## Functions
 
+Uses Fan out/fan in pattern
+
+In the fan out/fan in pattern, you execute multiple functions in parallel and then wait for all functions to finish.
+
+![fan-in/fan-out](https://docs.microsoft.com/en-us/azure/azure-functions/durable/media/durable-functions-concepts/fan-out-fan-in.png)
+
 ### Exposed Functions
 #### JobStart
 ##### Endpoint <!-- omit in toc -->
